@@ -1,0 +1,108 @@
+->> Install jdk :
+
+sudo apt update
+sudo apt install openjdk-8-jdk -y
+java -version; javac -version
+
+->> Set up non-root user
+
+1. Install open ssh
+sudo apt install openssh-server openssh-client -y
+
+2. Create hadoop user
+sudo adduser hdoop <-add hadoop user
+su - hdoop <-switch to new user and enter password
+
+3. Passwordless SSH for hadoop user
+ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
+<System generates SSH key pair>
+
+4. Use the cat command to store the public key as authorized_keys in the ssh directory:
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+5. Set the permissions for your user with the chmod command:
+chmod 0600 ~/.ssh/authorized_keys
+
+6. The new user is now able to SSH without needing to enter a password every time. Verify everything is set up correctly by using the hdoop user to SSH to localhost:
+ssh localhost
+
+->> Download and install hadoop
+
+1. Mirror link to dowmload
+wget https://downloads.apache.org/hadoop/common/hadoop-3.2.1/hadoop-3.2.1.tar.gz
+
+2. Extract files
+tar xzf hadoop-3.2.1.tar.gz
+
+->>Single node Hadoop deployment
+1. Edit the .bashrc shell configuration file using a text editor of your choice (we will be using nano):
+sudo nano .bashrc
+
+2. Define the Hadoop environment variables by adding the following content to the end of the file:
+#Hadoop Related Options
+export HADOOP_HOME=/home/hdoop/hadoop-3.2.1
+export HADOOP_INSTALL=$HADOOP_HOME
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
+export HADOOP_OPTS"-Djava.library.path=$HADOOP_HOME/lib/nativ"
+
+3.It is vital to apply the changes to the current running environment by using the following command:
+source ~/.bashrc
+
+4.Edit hadoop-env.sh File
+sudo nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 <-Uncomment the $JAVA_HOME variable 
+which javac
+readlink -f /usr/bin/javac
+
+5.core-site.xml: sudo nano $HADOOP_HOME/etc/hadoop/core-site.xml
+ <name>hadoop.tmp.dir</name>
+  <value>/home/hdoop/tmpdata</value>
+ <name>fs.default.name</name>
+  <value>hdfs://localhost:9000</value>
+
+6.hdfs-site.xml File
+<name>dfs.data.dir</name>
+  <value>/home/hdoop/dfsdata/namenode</value>
+<name>dfs.data.dir</name>
+  <value>/home/hdoop/dfsdata/datanode</value>
+<name>dfs.replication</name>
+  <value>1</value>
+
+7.mapread-site.xml
+<name>mapreduce.framework.name</name> 
+  <value>yarn</value> 
+
+8.yarn-site.xml
+<name>yarn.nodemanager.aux-services</name>
+  <value>mapreduce_shuffle</value>
+<name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+  <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+<name>yarn.resourcemanager.hostname</name>
+  <value>127.0.0.1</value>
+<name>yarn.acl.enable</name>
+  <value>0</value>
+<name>yarn.nodemanager.env-whitelist</name>   
+  <value>JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PERPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_MAPRED_HOME</value>
+
+-->Format hdfs namenode
+hdfs namenode -format
+
+->>Start cluster
+./start-dfs.sh
+./start-yarn.sh
+jps <- check if daemons are running
+
+Accsessing hadoop
+http://localhost:9870 - namenode
+http://localhost:9864 - datanodes
+http://localhost:8088 - yarn
+
+
+
+
+
