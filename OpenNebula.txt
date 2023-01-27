@@ -1,0 +1,56 @@
+Open Nebula
+
+1. Add OpenNebula and Debian repositories:
+Run the following commands to add epel and OpenNebula repositories on Ubuntu.
+
+echo "deb https://downloads.opennebula.org/repo/6.1/Ubuntu/20.04 stable opennebula" | sudo tee /etc/apt/sources.list.d/opennebula.list
+
+2. Install and Configure MySQL database :
+sudo apt update
+sudo apt -y install mariadb-server
+sudo mysql_secure_installation
+<Creating a DB for user>
+$ sudo mysql -u root -p
+CREATE DATABASE opennebula;
+GRANT ALL PRIVILEGES ON opennebula.* TO 'oneadmin' IDENTIFIED BY 'StrongPassword';
+FLUSH PRIVILEGES;
+EXIT;
+
+3. Install OpenNebula Front-end packages :
+sudo apt update
+sudo apt install opennebula opennebula-sunstone opennebula-gate opennebula-flow
+
+4.Ruby Runtime Installation :
+sudo /usr/share/one/install_gems
+
+5. Configure OpenNebula DB :
+
+sudo vim /etc/one/oned.conf
+#DB = [ BACKEND = "sqlite" ] <- uncomment
+DB = [ backend = "mysql",
+ server = "localhost",
+ port = 0,
+ user = "oneadmin",
+ passwd = "StrongPassword",
+ db_name = "opennebula" ]
+$ mysql -u oneadmin -p
+
+6. Configure oneadmin credentials
+$ sudo cat /var/lib/one/.one/one_auth
+-change password
+$ sudo su - oneadmin
+$ echo "oneadmin:mypassword" > ~/.one/one_auth
+$ oneuser passwd
+
+7. Configure firewall :
+sudo ufw allow proto tcp from any to any port 9869
+
+8. Start OpenNebula daemons.
+sudo systemctl start opennebula opennebula-sunstone
+sudo systemctl enable opennebula opennebula-sunstone
+
+9. Verifying Installation and Accessing sunstone UI
+$ sudo su - oneadmin -c "oneuser show"
+
+to access sunstone :
+http://<fontend_address>:9869  
